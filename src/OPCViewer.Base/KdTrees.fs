@@ -122,17 +122,9 @@ module KdTrees =
         (h.kdTreeAggZero2d_FileAbsPath)
 
     let cacheFile = System.IO.Path.ChangeExtension(masterKdPath, ".cache")
-    
-    if System.IO.File.Exists(cacheFile) then
-      Log.line "Found lazy kdtree cache"
-      if load then
-        let trees = loadAs<list<Box3d*Level0KdTree>> cacheFile b
-  //      let trees = trees |> List.filter(fun (_,(LazyKdTree k)) -> k.kdtreePath = blar)
-        trees |> HMap.ofList
-      else
-        HMap.empty
-    else
-      
+
+
+    let loadAndCreateCache() =
       Log.line "did not find lazy kdtree cache"
       let patchInfos =
         h.tree |> QTree.getLeaves |> Seq.toList |> List.map(fun x -> x.info)
@@ -199,6 +191,22 @@ module KdTrees =
           | _ ->
             Log.warn "Could not find level 0 kdtrees"
             HMap.empty
+    
+    if System.IO.File.Exists(cacheFile) then
+      Log.line "Found lazy kdtree cache"
+      if load then
+        try 
+            let trees = loadAs<list<Box3d*Level0KdTree>> cacheFile b
+      //      let trees = trees |> List.filter(fun (_,(LazyKdTree k)) -> k.kdtreePath = blar)
+            trees |> HMap.ofList
+        with e -> 
+            Log.warn "could not load lazy kdtree cache. (%A) rebuilding..." e
+            loadAndCreateCache()
+      else
+            HMap.empty
+    else
+      
+      loadAndCreateCache()
     
   let loadKdTrees (h : PatchHierarchy) (trafo:Trafo3d) (mode:ViewerModality) (b : BinarySerializer) : hmap<Box3d,Level0KdTree> =
     loadKdTrees' (h) (trafo) (true) mode b

@@ -294,9 +294,16 @@ module App =
             
             let rootTree = h.tree |> QTree.getRoot
 
+            let kdtrees = 
+                try 
+                    KdTrees.loadKdTrees' h Trafo3d.Identity true ViewerModality.XYZ Serialization.binarySerializer
+                with e -> 
+                    Log.warn "Could not load kd trees. %A" e
+                    HMap.empty
+
             yield {
               patchHierarchy = h
-              kdTree         = Aardvark.VRVis.Opc.KdTrees.expandKdTreePaths h.opcPaths.Opc_DirAbsPath (KdTrees.loadKdTrees' h Trafo3d.Identity true ViewerModality.XYZ Serialization.binarySerializer)
+              kdTree         = Aardvark.VRVis.Opc.KdTrees.expandKdTreePaths h.opcPaths.Opc_DirAbsPath kdtrees
               localBB        = rootTree.info.LocalBoundingBox 
               globalBB       = rootTree.info.GlobalBoundingBox
               neighborMap    = HMap.empty

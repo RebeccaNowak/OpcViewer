@@ -38,16 +38,31 @@ module CooTrafoWrapper =
         extern int LatLonAlt2Xyz(string pcPlanet, double dLat, double dLon, double dAlt, double& pdX, double& pdY, double& pdZ )
 
 module CooTransformation = 
+    // Helpers for path checking
+    let handlePathError path =
+      let fullPath = System.IO.Path.GetFullPath(path)
+      Log.line "the current directory is: %s" (System.IO.Directory.GetCurrentDirectory())
+      Log.line "looking for coo directory in: %A" fullPath
+      let error_message = sprintf "%s could not be found." path
+      failwith error_message
+    let checkFilePath path =
+      if not (System.IO.File.Exists path) then handlePathError path
+    let checkDirPath path =
+      if not (System.IO.Directory.Exists path) then handlePathError path
+      
     
     let init = 0.0
 
     let initCooTrafo () = 
-        let directory = @".\coo" 
-        let test = @".\coo" 
-        let t = System.IO.Path.GetFullPath(test)
-        Log.line "%A" t
-        let errorCode = CooTrafoWrapper.Init(test, directory)
-        printfn "%A" errorCode
+        let configDir = @".\coo" 
+        checkDirPath configDir
+        let logDir = configDir
+        let dllPath = @".\coo\CooTransformation.dll"
+        checkFilePath dllPath
+        
+        let errorCode = CooTrafoWrapper.Init(configDir, logDir)
+        Log.line "CooTrafoWrapper initialisation exited with error code %A" errorCode
+        //printfn "%A" errorCode
 
     let deInitCooTrafo () = 
         CooTrafoWrapper.DeInit()
